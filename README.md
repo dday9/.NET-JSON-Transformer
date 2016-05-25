@@ -56,12 +56,12 @@ To use the file simply add it to your project and call the JSON.Parse method.
           Console.WriteLine(jsonDocument.ToString)
           '<object>
           '  <array key = "key1" >
-          '  <number>1</number>
-          '  <number>-2.12345E6</number>
-          '  <array>
-          '    <boolean>true</Boolean>
-          '    <boolean>false</Boolean>
-          '  </array>
+          '    <number>1</number>
+          '    <number>-2.12345E6</number>
+          '    <array>
+          '      <boolean>true</Boolean>
+          '      <boolean>false</Boolean>
+          '    </array>
           '  </array>
           '  <object key = "key2" >
           '    <boolean key="nested object">null</boolean>
