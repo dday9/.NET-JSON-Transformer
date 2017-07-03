@@ -3,9 +3,8 @@ A Visual Basic .NET implementation that converts JSON Strings into a .NET XDocum
 
 To use the file simply add it to your project and call the JSON.Parse method.
 
-##Syntax
+## Syntax
 `Public Function Parse(ByVal source As String) As XDocument`
-
 
 **Parameters**
 - *source*
@@ -16,32 +15,38 @@ To use the file simply add it to your project and call the JSON.Parse method.
   - Type: System.Xml.Linq.XDocument
   - An XML representation of the JSON literal. If the JSON is not parsable, then the method returns Nothing.
   
-##Remarks
-  1. The parser ignores whitespace. So if the JSON literal is:
+## Remarks
+  * The parser ignores whitespace. So if the JSON literal is:
     ``` json
-{
-    "string key": [1, 2, {
-        "nested": true
-    }]
-}
+    {
+      "string key": [
+        1,
+        2,
+        {
+          "nested": true
+        }
+      ]
+    }
     ```
   Then it gets parsed as:
-  `{"string key":[1,2,{"nested":true}]}`
+  ``` json
+  {"string key":[1,2,{"nested":true}]}
+  ```
   
-  2. The returned XML is a 1-to-1 translation from the JSON. Using the same example as above, the resulting XML would be:
-    ``` xml
-<object>
-  <array key="string key">
-    <number>1</number>
-    <number>2</number>
+  * The returned XML is a 1-to-1 translation from the JSON. Using the same example as above, the resulting XML would be:
+    ```
     <object>
-      <boolean key="nested">true</boolean>
+      <array key="string key">
+        <number>1</number>
+        <number>2</number>
+        <object>
+          <boolean key="nested">true</boolean>
+        </object>
+      </array>
     </object>
-  </array>
-</object>
     ```
 
-##Examples:
+## Examples:
   The following example demonstrates the Parse method.
   
   ``` vb.net
