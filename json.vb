@@ -2,181 +2,255 @@ Option Strict On
 
 Imports System
 Imports System.Collections.Generic
-Imports System.Linq
 Imports System.Text.RegularExpressions
 Imports System.Xml
 Imports System.Xml.Linq
 Public Module JSON
 
-    Public Function Parse(ByVal source As String) As XDocument
-        Dim d As XDocument = Nothing
-        Dim t As XElement = Parse_Value(source)
+	''' <summary>Converts a JSON literal into an XDocument.</summary>
+	''' <param name="literal">The JSON literal to convert.</param>
+	''' <value>XDocument</value>
+	''' <returns>XDocument of parsed JSON literal.</returns>
+	''' <remarks>Returns Nothing if the conversion fails.</remarks>
+	Public Function Parse(ByVal literal As String) As XDocument
+		'Declare a document to return
+		Dim document As XDocument = Nothing
 
-        If t IsNot Nothing Then
-            d = New XDocument(New XDeclaration("1.0", "utf-8", "yes"), t)
-        End If
+		'Declare a value that will make up the document
+		Dim value As XElement = Parse_Value(literal, 0)
+		If value IsNot Nothing Then
+			document = New XDocument(New XDeclaration("1.0", "utf-8", "yes"), value)
+		End If
 
-        Return d
-    End Function
+		Return document
+	End Function
 
-    Private Function Parse_Object(ByRef source As String) As XElement
-        Dim t As XElement = Nothing
-        Dim tempSource As String = source.Trim()
+	Private Function Parse_Value(ByVal source As String, ByRef index As Integer) As XElement
+		'Skip any whitespace
+		index = JSON.SkipWhitespace(source, index)
 
-        If tempSource.Length >= 2 AndAlso tempSource.StartsWith("{") Then
-            tempSource = tempSource.Remove(0, 1).Trim()
+		'Go through each available value until one returns something that ain't nothing
+		Dim node As XElement = JSON.Parse_Null(source, index)
+		If node Is Nothing Then
+			node = JSON.Parse_Boolean(source, index)
+			If node Is Nothing Then
+				node = JSON.Parse_Number(source, index)
+				If node Is Nothing Then
+					node = JSON.Parse_String(source, index)
+					If node Is Nothing Then
+						node = JSON.Parse_Array(source, index)
+						If node Is Nothing Then
+							node = JSON.Parse_Object(source, index)
+						End If
+					End If
+				End If
+			End If
+		End If
 
-            If tempSource.StartsWith("}") Then
-                t = New XElement("object")
-                source = tempSource.Remove(0, 1).Trim()
-            Else
-                Dim values As New List(Of XElement)
-                Dim key As XElement = Parse_String(tempSource)
-                tempSource = tempSource.Trim()
+		Return node
+	End Function
 
-                If tempSource.StartsWith(":") Then
-                    tempSource = tempSource.Remove(0, 1).Trim()
+	Private Function Parse_Object(ByVal source As String, ByRef index As Integer) As XElement
+		'Declare a value to return (default is Nothing)
+		Dim node As XElement = Nothing
 
-                    Dim value As XElement = Parse_Value(tempSource)
-                    If value IsNot Nothing Then
-                        value.SetAttributeValue("key", key.Value)
-                        values.Add(value)
-                        tempSource = tempSource.Trim()
-                        Do While value IsNot Nothing AndAlso tempSource.Length > 0 AndAlso Not tempSource.StartsWith("}") AndAlso tempSource.StartsWith(",")
-                            tempSource = tempSource.Remove(0, 1).Trim()
-                            key = Parse_String(tempSource)
-                            tempSource = tempSource.Trim()
-                            If tempSource.StartsWith(":") Then
-                                tempSource = tempSource.Remove(0, 1).Trim()
-                                value = Parse_Value(tempSource)
-                                If value IsNot Nothing Then
-                                    value.SetAttributeValue("key", key.Value)
-                                    values.Add(value)
-                                    tempSource = tempSource.Trim()
-                                End If
-                            End If
-                        Loop
+		'Match the opening curly bracket
+		If source(index) = "{"c Then	
+			'Declare collections that will make up the node's key:value
+			Dim keys,values As New List(Of XElement)
 
-                        tempSource = tempSource.Trim()
-                        If value IsNot Nothing AndAlso tempSource.StartsWith("}") Then
-                            tempSource = tempSource.Remove(0, 1).Trim()
-                            t = New XElement("object", values)
-                            source = New String(tempSource.ToArray())
-                        End If
-                    End If
-                End If
-            End If
-        End If
+			'Declare a temporary index placeholder in case the parsing fails
+			Dim tempIndex As Integer = JSON.SkipWhitespace(source, index + 1)
 
-        Return t
-    End Function
+			'Declare a String which would represent the key of key/value pair
+			Dim key As XElement = Nothing
 
-    Private Function Parse_Array(ByRef source As String) As XElement
-        Dim t As XElement = Nothing
-        Dim tempSource As String = source.Trim()
+			'Declare an XElement which would represent the value of the key/value pair
+			Dim item As XElement = Nothing
 
-        If tempSource.Length >= 2 AndAlso tempSource.StartsWith("[") Then
-            tempSource = tempSource.Remove(0, 1).Trim()
+			'Loop until there is a closing curly bracket
+			Do While tempIndex < source.Length AndAlso source(tempIndex) <> "}"c
+				'Match a String which should be the key
+				key = Parse_String(source, tempIndex)
 
-            If tempSource.StartsWith("]") Then
-                t = New XElement("array")
-                source = tempSource.Remove(0, 1).Trim()
-            Else
-                Dim values As New List(Of XElement)
-                Dim value As XElement = Parse_Value(tempSource)
+				'Ensure that there was a valid key
+				If key IsNot Nothing Then
+					'Add the item to the collection that will ultimately represent the key of the key/value pair
+					keys.Add(key)
 
-                If value IsNot Nothing Then
-                    values.Add(value)
-                    tempSource = tempSource.Trim()
-                    Do While value IsNot Nothing AndAlso tempSource.Length > 0 AndAlso Not tempSource.StartsWith("]") AndAlso tempSource.StartsWith(",")
-                        tempSource = tempSource.Remove(0, 1).Trim()
-                        value = Parse_Value(tempSource)
-                        tempSource = tempSource.Trim()
-                        If value IsNot Nothing Then
-                            values.Add(value)
-                        End If
-                    Loop
+					'Skip any whitespace
+					tempIndex = JSON.SkipWhitespace(source, tempIndex)
 
-                    tempSource = tempSource.Trim()
-                    If value IsNot Nothing AndAlso tempSource.StartsWith("]") Then
-                        tempSource = tempSource.Remove(0, 1).Trim()
-                        t = New XElement("array", values)
-                        source = New String(tempSource.ToArray())
-                    End If
-                End If
-            End If
-        End If
+					'Ensure a separator
+					If source(tempIndex) = ":"c Then
+						'Skip any whitespace
+						tempIndex = JSON.SkipWhitespace(source, tempIndex + 1)
 
-        Return t
-    End Function
+						item = Parse_Value(source, tempIndex)
 
-    Private Function Parse_Value(ByRef source As String) As XElement
-        Dim t As XElement = Parse_String(source)
+						'Ensure that there was a valid item
+						If item IsNot Nothing Then
+							'Add the item to the collection that will ultimately represent the value of the key/value pair
+							values.Add(item)
 
-        If t Is Nothing Then
-            t = Parse_Number(source)
+							'Skip any whitespace
+							tempIndex = JSON.SkipWhitespace(source, tempIndex)
 
-            If t Is Nothing Then
-                t = Parse_Boolean(source)
+							'Ensure a separator or ending bracket
+							If source(tempIndex) = ","c Then
+								tempIndex = JSON.SkipWhitespace(source, tempIndex + 1)
+							ElseIf source(tempIndex) <> ","c AndAlso source(tempIndex) <> "}"c Then
+								Throw New Exception("Unexpected token at position: " & tempIndex + 1 & ". Expected a comma to separate Object items.")
+							End If
+						Else
+							Throw New Exception("Invalid item in array at position: " & tempIndex + 1)
+						End If
+					Else
+						Throw New Exception("Unexpected token at position: " & tempIndex + 1 & ". Expected a colon to separate Array items.")
+					End If
+				Else
+					Throw New Exception("Unexpected token at position: " & tempIndex + 1 & ". Expected a String to represent the key/value pair of an Object.")
+				End If
+			Loop
 
-                If t Is Nothing Then
-                    t = Parse_Array(source)
+			'Valid parse
+			If tempIndex < source.Length AndAlso source(tempIndex) = "}"c Then
+				node = New XElement("object")
+				For i As Integer = 0 To keys.Count - 1
+					node.Add(New XElement(keys.Item(i).Value, values.Item(i)))
+				Next
+				index = tempIndex + 1
+			End If
+		End If
+		
+		Return node
+	End Function
 
-                    If t Is Nothing Then
-                        t = Parse_Object(source)
-                    End If
-                End If
-            End If
-        End If
+	Private Function Parse_Array(ByVal source As String, ByRef index As Integer) As XElement
+		'Declare a value to return (default is Nothing)
+		Dim node As XElement = Nothing
 
-        Return t
-    End Function
+		'Match the opening square bracket
+		If source(index) = "["c Then	
+			'Declare a collection that will make up the node's value
+			Dim nodes As List(Of XElement) = New List(Of XElement)
 
-    Private Function Parse_String(ByRef source As String) As XElement
-        Dim m As Match = Regex.Match(source, """([^""\\]|\\[""\\\/bfnrt])*""")
-        Dim t As XElement = Nothing
+			'Declare a temporary index placeholder in case the parsing fails
+			Dim tempIndex As Integer = JSON.SkipWhitespace(source, index + 1)
 
-        If m.Success AndAlso m.Index = 0 Then
-            Dim literal As String = m.Value.Remove(0, 1)
-            literal = literal.Remove(literal.Length - 1)
-            t = New XElement("string", literal)
-            source = source.Substring(m.Value.Length)
-        End If
+			'Declare an XElement which would represent an item in the array
+			Dim item As XElement = Nothing
 
-        Return t
-    End Function
+			'Loop until there is a closing square bracket
+			Do While tempIndex < source.Length AndAlso source(tempIndex) <> "]"c
+				item = Parse_Value(source, tempIndex)
 
-    Private Function Parse_Number(ByRef source As String) As XElement
-        Dim m As Match = Regex.Match(source, "-?\d+((\.\d+)?((e|E)[+-]?\d+)?)")
-        Dim t As XElement = Nothing
+				'Ensure that there was a valid item
+				If item IsNot Nothing Then
+					'Add the item to the collection that will ultimately represent the node's value
+					nodes.Add(item)
 
-        If m.Success AndAlso m.Index = 0 Then
-            t = New XElement("number", m.Value)
-            source = source.Substring(m.Value.Length)
-        End If
+					'Skip any whitespace
+					tempIndex = JSON.SkipWhitespace(source, tempIndex)
 
-        Return t
-    End Function
+					'Ensure a separator or ending bracket
+					If source(tempIndex) = ","c Then
+						tempIndex = JSON.SkipWhitespace(source, tempIndex + 1)
+					ElseIf source(tempIndex) <> ","c AndAlso source(tempIndex) <> "]"c Then
+						Throw New Exception("Unexpected token at position: " & tempIndex + 1 & ". Expected a comma to separate Array items.")
+					End If
+				Else
+					Throw New Exception("Invalid item in array at position: " & tempIndex + 1)
+				End If
+			Loop
 
-    Private Function Parse_Boolean(ByRef source As String) As XElement
-        Dim t As XElement = Nothing
+			'Valid parse
+			If tempIndex < source.Length AndAlso source(tempIndex) = "]"c Then
+				node = New XElement("array", nodes)
+				index = tempIndex + 1
+			End If
+		End If
 
-        If source.StartsWith("true", StringComparison.OrdinalIgnoreCase) OrElse source.StartsWith("null", StringComparison.OrdinalIgnoreCase) Then
-            t = New XElement("boolean", source.Substring(0, 4))
-            source = source.Substring(4)
-        ElseIf source.StartsWith("false", StringComparison.OrdinalIgnoreCase) Then
-            t = New XElement("boolean", source.Substring(0, 5))
-            source = source.Substring(5)
-        End If
+		Return node
+	End Function
 
-        Return t
-    End Function
+	Private Function Parse_String(ByVal source As String, ByRef index As Integer) As XElement
+		'Declare a value to return (default is Nothing)
+		Dim node As XElement = Nothing
 
-    Private Function RemoveWhitespace(ByVal value As String) As String
-        Do While value.Length > 0 AndAlso String.IsNullOrWhiteSpace(value(0))
-            value = value.Remove(0, 1)
-        Loop
+		'The pattern to match a number is:
+		'Double-Quote
+		'Any unicode character except for (\ or ") or an escaped character zero or more times
+		'Double-Quote
+		Dim pattern As Regex = New Regex("""([^""\\]|\\[""\\\/bfnrt])*""", RegexOptions.IgnoreCase)
+		Dim m As Match = pattern.Match(source, index)
 
-        Return value
-    End Function
+		'A match will only be valid if it matches at the beginning of the string
+		If m.Success AndAlso m.Index = index Then
+			node = New XElement("string", m.Value.Substring(1, m.Value.Length - 2))
+			index += m.Value.Length
+		End If
+
+		Return node
+	End Function
+
+	Private Function Parse_Number(ByVal source As String, ByRef index As Integer) As XElement
+		'Declare a value to return (default is Nothing)
+		Dim node As XElement = Nothing
+
+		'The pattern to match a number is:
+		'Optional unary negative
+		'0 or 1-9 followed by zero or more digits
+		'Optional mantissa followed by one or more digits
+		'Optional euler's number followed by optional unary operator followed by one or more digits
+		Dim pattern As Regex = New Regex("-?([1-9]\d*|0)(.\d+)?([eE][-+]?\d+)?")
+		Dim m As Match = pattern.Match(source, index)
+
+		'A match will only be valid if it matches at the beginning of the string
+		If m.Success AndAlso m.Index = index Then
+			node = New XElement("number", m.Value)
+			index += m.Value.Length
+		End If
+
+		Return Node
+	End Function
+
+	Private Function Parse_Boolean(ByVal source As String, ByRef index As Integer) As XElement
+		'Declare a value to return (default is Nothing)
+		Dim node As XElement = Nothing
+
+		'Literally match 'true' or 'false'
+		Dim startSubstring As String = source.Substring(index)
+
+		If startSubstring.IndexOf("true", StringComparison.OrdinalIgnoreCase) = 0 Then
+			node = New XElement("boolean", startSubstring.Substring(0, 4))
+			index += 4
+		ElseIf startSubstring.IndexOf("false", StringComparison.OrdinalIgnoreCase) = 0 Then
+			node = New XElement("boolean", startSubstring.Substring(0, 5))
+			index += 5
+		End If
+
+		Return node
+	End Function
+
+	Private Function Parse_Null(ByVal source As String, ByRef index As Integer) As XElement
+		'Declare a value to return (default is Nothing)
+		Dim node As XElement = Nothing
+
+		'Literally match 'null'
+		If source.Substring(index).IndexOf("null", StringComparison.OrdinalIgnoreCase) = 0 Then
+			node = New XElement("null")
+			index += 4
+		End If
+
+		Return node
+	End Function
+
+	Private Function SkipWhitespace(ByVal source As String, ByVal index As Integer) As Integer
+		Do While index < source.Length AndAlso Char.IsWhiteSpace(source(index))
+			index += 1
+		Loop
+		
+		Return index
+	End Function
 End Module
