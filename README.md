@@ -4,10 +4,10 @@ A Visual Basic .NET implementation that converts JSON Strings into a .NET XDocum
 To use the file simply add it to your project and call the JSON.Parse method.
 
 ## Syntax
-`Public Function Parse(ByVal source As String) As XDocument`
+`Public Function Parse(ByVal literal As String) As XDocument`
 
 **Parameters**
-- *source*
+- *literal*
   - Type: System.String
   - The JSON literal to be converted.
 
