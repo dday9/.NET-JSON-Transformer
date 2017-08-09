@@ -13,6 +13,8 @@ Public Module JSON
 	''' <returns>XDocument of parsed JSON literal.</returns>
 	''' <remarks>Returns Nothing if the conversion fails.</remarks>
 	Public Function Parse(ByVal literal As String) As XDocument
+		If String.IsNullOrWhitespace(literal) Then Return Nothing
+
 		'Declare a document to return
 		Dim document As XDocument = Nothing
 
