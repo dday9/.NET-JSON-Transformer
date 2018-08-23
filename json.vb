@@ -1,175 +1,264 @@
 Public Module JSON
 
-    ''' <summary>Converts a JSON literal into an XDocument.</summary>
-    ''' <param name="literal">The JSON literal to convert.</param>
-    ''' <returns>XDocument of parsed JSON literal.</returns>
-    ''' <remarks>Returns Nothing if the conversion fails.</remarks>
-    Public Function Parse(ByVal literal As String) As XDocument
-        If String.IsNullOrWhiteSpace(literal) Then Return Nothing
+    Public Function Parse(ByVal source As String) As XDocument
+        'Remove any whitespace
+        source = source.Trim()
+        If String.IsNullOrWhiteSpace(source) Then Return Nothing
 
         'Declare a document to return
         Dim document As XDocument = Nothing
 
         'Declare a value that will make up the document
-        Dim value As XElement = Nothing
-        If Parse_Value(literal, 0, value) Then
+        Dim value As XElement = Parse_Value(source, 0)
+        If value IsNot Nothing Then
             document = New XDocument(New XDeclaration("1.0", "utf-8", "yes"), value)
         End If
 
         Return document
     End Function
 
-    Private Function Parse_Value(ByVal source As String, ByRef index As Integer, ByRef value As XElement) As Boolean
-        'Skip any whitespace
-        index = JSON.SkipWhitespace(source, index)
+    Private Function Parse_Value(ByVal source As String, ByRef index As Integer) As XElement
+        'Declare a value to return
+        Dim value As XElement = Nothing
 
-        'Go through each available value until one returns something that ain't nothing
-        If Not Parse_String(source, index, value) AndAlso
-                Not Parse_Number(source, index, value) AndAlso
-                Not Parse_Object(source, index, value) AndAlso
-                Not Parse_Array(source, index, value) AndAlso
-                Not Parse_Boolean(source, index, value) AndAlso
-                Not Parse_Null(source, index, value) Then
+        'Declare a temporary placeholder and skip any whitespace
+        Dim temp_index As Integer = SkipWhitespace(source, index)
+
+        'Go through each available value until one returns something that isn't null
+        value = Parse_Object(source, temp_index)
+        If value Is Nothing Then
+            value = Parse_Array(source, temp_index)
+            If value Is Nothing Then
+                value = Parse_String(source, temp_index)
+                If value Is Nothing Then
+                    value = Parse_Number(source, temp_index)
+                    If value Is Nothing Then
+                        value = Parse_Boolean(source, temp_index)
+                        If value Is Nothing Then
+                            value = Parse_Null(source, temp_index)
+                        End If
+                    End If
+                End If
+            End If
         End If
 
-        Return value IsNot Nothing
+        'Change the index
+        index = temp_index
+
+        'Return the value
+        Return value
     End Function
 
-    Private Function Parse_Object(ByVal source As String, ByRef index As Integer, ByRef value As XElement) As Boolean
-        'Match the opening curly bracket
-        If source(index) = "{"c Then
-            'Declare collections that will make up the node's key:value
-            Dim keys, values As New List(Of XElement)
+    Private Function Parse_Object(ByVal source As String, ByRef index As Integer) As XElement
+        'Declare a value to return
+        Dim value As XElement = Nothing
 
-            'Declare a temporary index placeholder in case the parsing fails
-            Dim tempIndex As Integer = JSON.SkipWhitespace(source, index + 1)
+        'Declare a temporary placeholder
+        Dim temp_index As Integer = index
 
-            'Declare a String which would represent the key of key/value pair
+        'Check for the starting opening curly bracket
+        If source(temp_index).Equals("{"c) Then
+            'Increment the index
+            temp_index += 1
+
+            'Declare a collection that will make up the nodes' value
+            Dim nodes As List(Of Tuple(Of String, XElement)) = New List(Of Tuple(Of String, XElement))
+
+            'Declare an XElement to store the key (aka - name) of the KeyValuePair
             Dim key As XElement = Nothing
 
-            'Declare an XElement which would represent the value of the key/value pair
+            'Declare an XElement which will represent the value of the KeyValuePair
             Dim item As XElement = Nothing
 
-            'Loop until there is a closing curly bracket
-            Do While tempIndex < source.Length AndAlso source(tempIndex) <> "}"c
-                'Reset the key
-                key = Nothing
+            'Loop until we've reached the end of the source or until we've hit the ending bracket
+            Do While temp_index < source.Length AndAlso Not source(temp_index).Equals("}"c)
+                'Attempt to parse the String
+                key = Parse_String(source, temp_index)
 
-                'Match a String which should be the key
-                If Parse_String(source, tempIndex, key) Then
-                    'Add the item to the collection that will ultimately represent the key of the key/value pair
-                    keys.Add(key)
+                'Check if the parse was successful
+                If key Is Nothing Then
+                    Throw New Exception($"Expected a String instead of a '{source(temp_index)}' at position: {temp_index}.")
+                Else
+                    'Skip any unneeded whitespace
+                    temp_index = SkipWhitespace(source, temp_index)
 
-                    'Skip any whitespace
-                    tempIndex = JSON.SkipWhitespace(source, tempIndex)
+                    If temp_index < source.Length Then
+                        'Check if the currently iterated character is a object separator ':'
+                        If source(temp_index) = ":"c Then
+                            'Increment the index and skip any unneeded whitespace
+                            temp_index = SkipWhitespace(source, temp_index + 1)
 
-                    'Ensure a separator
-                    If source(tempIndex) = ":"c Then
-                        'Skip any whitespace
-                        tempIndex = JSON.SkipWhitespace(source, tempIndex + 1)
+                            If temp_index < source.Length Then
+                                'Assign the item to the parsed value
+                                item = Parse_Value(source, temp_index)
 
-                        'Reset the value
-                        item = Nothing
+                                'Check if the parse was successful
+                                If item Is Nothing Then
+                                    Throw New Exception($"Unexpected character '{source(temp_index)}' at position: {temp_index}.")
+                                Else
+                                    'Add the item to the collection
+                                    nodes.Add(New Tuple(Of String, XElement)(key.Value, item))
 
-                        If Parse_Value(source, tempIndex, item) Then
-                            'Add the item to the collection that will ultimately represent the value of the key/value pair
-                            values.Add(item)
+                                    'Skip any unneeded whitespace
+                                    temp_index = SkipWhitespace(source, temp_index)
 
-                            'Skip any whitespace
-                            tempIndex = JSON.SkipWhitespace(source, tempIndex)
-
-                            'Ensure a separator or ending bracket
-                            If source(tempIndex) = ","c Then
-                                tempIndex = JSON.SkipWhitespace(source, tempIndex + 1)
-                            ElseIf source(tempIndex) <> "}"c Then
-                                Return False
+                                    'Check if we can continue
+                                    If temp_index < source.Length Then
+                                        'Check if the currently iterated character is either a item separator (comma) or ending curly bracket
+                                        If source(temp_index).Equals(","c) Then
+                                            'Increment the index and skip any unneeded whitespace
+                                            temp_index = SkipWhitespace(source, temp_index + 1)
+                                        ElseIf source(temp_index) <> "}"c Then
+                                            Throw New Exception($"Expected a ',' instead of a '{source(temp_index)}' at position: {temp_index}.")
+                                        End If
+                                    End If
+                                End If
+                            Else
+                                Throw New Exception("Expected an Object, Array, String, Number, Boolean, or Null instead I reached the end of the source code.")
                             End If
                         Else
-                            Return False
+                            Throw New Exception($"Expected a ':' instead of a '{source(temp_index)}' at position: {temp_index}.")
                         End If
                     Else
-                        Return False
+                        Throw New Exception("Expected a ',' instead I reached the end of the source code.")
                     End If
                 End If
-
             Loop
 
-            'Valid parse
-            If tempIndex < source.Length AndAlso source(tempIndex) = "}"c Then
+            'Check if the currently iterated value is an ending curly bracket
+            If temp_index < source.Length AndAlso source(temp_index) = "}"c Then
+                'Increment the index
+                temp_index += 1
+
+                'Set the new index
+                index = temp_index
+
+                'Create the Object
                 value = New XElement("object")
-                For i As Integer = 0 To keys.Count - 1
-                    value.Add(New XElement(keys.Item(i).Value, values.Item(i)))
+
+                'Iterate through each item in the nodes
+                For Each n As Tuple(Of String, XElement) In nodes
+                    'Set the name attribute and then add the element to the Object
+                    n.Item2.SetAttributeValue("name", n.Item1)
+                    value.Add(n.Item2)
                 Next
-                index = tempIndex + 1
             End If
         End If
 
-        Return value IsNot Nothing
+        'Return the value
+        Return value
     End Function
 
-    Private Function Parse_Array(ByVal source As String, ByRef index As Integer, ByRef value As XElement) As Boolean
-        'Match the opening square bracket
-        If source(index) = "["c Then
-            'Declare a collection that will make up the node's value
+    Private Function Parse_Array(ByVal source As String, ByRef index As Integer) As XElement
+        'Declare a value to return
+        Dim value As XElement = Nothing
+
+        'Declare a temporary placeholder
+        Dim temp_index As Integer = index
+
+        'Check for the starting opening bracket
+        If source(temp_index).Equals("["c) Then
+            'Increment the index
+            temp_index += 1
+
+            'Declare a collection that will make up the nodes' value
             Dim nodes As List(Of XElement) = New List(Of XElement)
 
-            'Declare a temporary index placeholder in case the parsing fails
-            Dim tempIndex As Integer = JSON.SkipWhitespace(source, index + 1)
-
-            'Declare an XElement which would represent an item in the array
+            'Declare an XElement which will represent the currently iterated item in the array
             Dim item As XElement = Nothing
 
-            'Loop until there is a closing square bracket
-            Do While tempIndex < source.Length AndAlso source(tempIndex) <> "]"c
-                'Reset the value
-                item = Nothing
+            'Loop until we've reached the end of the source or until we've hit the ending bracket
+            Do While temp_index < source.Length AndAlso Not source(temp_index).Equals("]"c)
+                'Assign the item to the parsed value
+                item = Parse_Value(source, temp_index)
 
-                If Parse_Value(source, tempIndex, item) Then
-                    'Add the item to the collection that will ultimately represent the node's value
+                'Check if the parse was successful
+                If item Is Nothing Then
+                    Throw New Exception($"Unexpected character '{source(temp_index)}' at position: {temp_index}.")
+                Else
+                    'Add the item to the collection
                     nodes.Add(item)
 
-                    'Skip any whitespace
-                    tempIndex = JSON.SkipWhitespace(source, tempIndex)
+                    'Skip any unneeded whitespace
+                    temp_index = SkipWhitespace(source, temp_index)
 
-                    'Ensure a separator or ending bracket
-                    If source(tempIndex) = ","c Then
-                        tempIndex = JSON.SkipWhitespace(source, tempIndex + 1)
-                    ElseIf source(tempIndex) <> "]"c Then
-                        Return False
+                    'Check if we can continue
+                    If temp_index < source.Length Then
+                        'Check if the currently iterated character is either a item separator (comma) or ending bracket
+                        If source(temp_index).Equals(","c) Then
+                            'Increment the index and skip any unneeded whitespace
+                            temp_index = SkipWhitespace(source, temp_index + 1)
+                        ElseIf source(temp_index) <> "]"c Then
+                            Throw New Exception($"Expected a ',' instead of a '{source(temp_index)}' at position: {temp_index}.")
+                        End If
                     End If
-                Else
-                    Return False
                 End If
             Loop
 
-            'Valid parse
-            If tempIndex < source.Length AndAlso source(tempIndex) = "]"c Then
+            'Check if the currently iterated value is an ending bracket
+            If temp_index < source.Length AndAlso source(temp_index) = "]"c Then
+                'Increment the index
+                temp_index += 1
+
+                'Set the new index
+                index = temp_index
+
+                'Create the Array
                 value = New XElement("array", nodes)
-                index = tempIndex + 1
             End If
         End If
 
-        Return value IsNot Nothing
+        Return value
     End Function
 
-    Private Function Parse_String(ByVal source As String, ByRef index As Integer, ByRef value As XElement) As Boolean
-        'The pattern to match a number is:
-        'Double-Quote
-        'Any unicode character except for (\ or ") or an escaped character zero or more times
-        'Double-Quote
-        Dim pattern As Regex = New Regex("""([^""\\]|\\[""\\\/bfnrt])*""", RegexOptions.IgnoreCase)
-        Dim m As Match = pattern.Match(source, index)
+    Private Function Parse_String(ByVal source As String, ByRef index As Integer) As XElement
+        'Declare a value to return
+        Dim value As XElement = Nothing
 
-        'A match will only be valid if it matches at the beginning of the string
-        If m.Success AndAlso m.Index = index Then
-            value = New XElement("string", m.Value.Substring(1, m.Value.Length - 2))
-            index += m.Value.Length
+        'Declare a CONST to store the double-quote character and escaped characters
+        Const double_quote As Char = """"c
+        Const escaped_characters As String = double_quote & "\/bfnrt"
+
+        'Declare a temporary placeholder
+        Dim temp_index As Integer = index
+
+        'Check for the starting double-quote
+        If source(temp_index).Equals(double_quote) Then
+            'Increment the index
+            temp_index += 1
+
+            'Loop until we've reached the end of the source or until we've hit the ending double-quote
+            Do While temp_index < source.Length AndAlso Not source(temp_index).Equals(double_quote)
+                'Check if we're at an escaped character
+                If source(temp_index) = "\"c AndAlso
+                    temp_index + 1 < source.Length AndAlso
+                    escaped_characters.IndexOf(source(temp_index + 1)) <> -1 Then
+                    temp_index += 1
+                ElseIf source(temp_index) = "\"c Then
+                    Throw New Exception("Unescaped backslash in a String. Position: " & index)
+                End If
+
+                'Increment the index
+                temp_index += 1
+            Loop
+
+            'Check if the currently iterated character is a double-quote
+            If temp_index < source.Length AndAlso source(temp_index).Equals(double_quote) Then
+                'Increment the index
+                temp_index += 1
+
+                'Create the String
+                value = New XElement("string", source.Substring(index + 1, temp_index - index - 2))
+
+                'Set the new index
+                index = temp_index
+            End If
         End If
 
-        Return value IsNot Nothing
+        Return value
     End Function
 
-    Private Function Parse_Number(ByVal source As String, ByRef index As Integer, ByRef value As XElement) As Boolean
+    Private Function Parse_Number(ByVal source As String, ByRef index As Integer) As XElement
         'Get the current culture information
         Dim culture As Globalization.CultureInfo = Globalization.CultureInfo.CurrentCulture
 
@@ -183,21 +272,21 @@ Public Module JSON
         End If
 
         'Match one or more digits
-        If temp_index < source.Length AndAlso Char.IsDigit(source(temp_index)) Then
-            Do While temp_index < source.Length AndAlso Char.IsDigit(source(temp_index))
+        If temp_index < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(temp_index).ToString()) <> -1 Then
+            Do While temp_index < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(temp_index).ToString()) <> -1
                 temp_index += 1
             Loop
         Else
-            Return False
+            Return Nothing
         End If
 
-        'Optionally match a mantissa followed by one or more digits
+        'Optionally match a decimal separator followed by one or more digits
         If temp_index + 1 < source.Length AndAlso
             source.IndexOf(culture.NumberFormat.NumberDecimalSeparator, temp_index, StringComparison.OrdinalIgnoreCase) = temp_index AndAlso
-            Char.IsDigit(source(temp_index + 1)) Then
+            Array.IndexOf(culture.NumberFormat.NativeDigits, source(temp_index + 1).ToString()) <> -1 Then
 
             temp_index += 1
-            Do While temp_index < source.Length AndAlso Char.IsDigit(source(temp_index))
+            Do While temp_index < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(temp_index).ToString()) <> -1
                 temp_index += 1
             Loop
         End If
@@ -209,28 +298,27 @@ Public Module JSON
             If temp_index + 2 < source.Length AndAlso
                 (source.IndexOf(culture.NumberFormat.NegativeSign, temp_index + 1, StringComparison.OrdinalIgnoreCase) = temp_index + 1 OrElse
                 source.IndexOf(culture.NumberFormat.PositiveSign, temp_index + 1, StringComparison.OrdinalIgnoreCase) = temp_index + 1) AndAlso
-                Char.IsDigit(source(temp_index + 2)) Then
-
+                Array.IndexOf(culture.NumberFormat.NativeDigits, source(temp_index + 2).ToString()) <> -1 Then
                 temp_index += 2
-                Do While temp_index < source.Length AndAlso Char.IsDigit(source(temp_index))
-                    temp_index += 1
-                Loop
-            ElseIf temp_index + 1 < source.Length AndAlso Char.IsDigit(source(temp_index + 1)) Then
+            ElseIf temp_index + 1 < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(temp_index + 1).ToString()) <> -1 Then
                 temp_index += 1
-                Do While temp_index < source.Length AndAlso Char.IsDigit(source(temp_index))
-                    temp_index += 1
-                Loop
             End If
+
+            Do While temp_index < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(temp_index).ToString()) <> -1
+                temp_index += 1
+            Loop
         End If
 
-        'Convert everything up to the index
-        value = New XElement("number", source.Substring(index, temp_index - index))
+        'Create the number
+        Dim value As XElement = New XElement("number", source.Substring(index, temp_index - index))
         index = temp_index
 
-        Return value IsNot Nothing
+        Return value
     End Function
 
-    Private Function Parse_Boolean(ByVal source As String, ByRef index As Integer, ByRef value As XElement) As Boolean
+    Private Function Parse_Boolean(ByVal source As String, ByRef index As Integer) As XElement
+        Dim value As XElement = Nothing
+
         'Literally match 'true' or 'false'
         If source.IndexOf("true", index, StringComparison.OrdinalIgnoreCase) = index Then
             value = New XElement("boolean", True)
@@ -240,17 +328,19 @@ Public Module JSON
             index += 5
         End If
 
-        Return value IsNot Nothing
+        Return value
     End Function
 
-    Private Function Parse_Null(ByVal source As String, ByRef index As Integer, ByRef value As XElement) As Boolean
+    Private Function Parse_Null(ByVal source As String, ByRef index As Integer) As XElement
+        Dim value As XElement = Nothing
+
         'Literally match 'null' in the source starting at the index
         If source.IndexOf("null", index, StringComparison.OrdinalIgnoreCase) = index Then
             value = New XElement("null")
             index += 4
         End If
 
-        Return value IsNot Nothing
+        Return value
     End Function
 
     Private Function SkipWhitespace(ByVal source As String, ByVal index As Integer) As Integer
@@ -260,4 +350,5 @@ Public Module JSON
 
         Return index
     End Function
+
 End Module
