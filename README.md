@@ -36,21 +36,17 @@ To use the file simply add it to your project and call the JSON.Parse method.
   * The returned XML is a 1-to-1 translation from the JSON. Using the same example as above, the resulting XML would be:
     ```
     <object>
-      <string_key>
-        <array>
-          <number>1</number>
-          <number>2</number>
-          <object>
-            <nested>
-              <boolean>true</boolean>
-            </nested>
-          </object>
-        </array>
-      </string_key>
+      <array name="string_key">
+        <number>1</number>
+        <number>2</number>
+        <object>
+          <boolean name="nested">true</boolean>
+        </object>
+      </array>
     </object>
     ```
 
-## Examples:
+## Examples and Demo:
   The following example demonstrates the Parse method.
   
   ``` vb.net
@@ -62,4 +58,4 @@ To use the file simply add it to your project and call the JSON.Parse method.
 	  End Sub
   End Module
   ```
-Fiddle: https://dotnetfiddle.net/Gui2tq
+Fiddle: https://dotnetfiddle.net/G707RC
