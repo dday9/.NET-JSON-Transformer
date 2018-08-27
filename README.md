@@ -1,5 +1,5 @@
 # .NET-JSON-Transformer
-A Visual Basic .NET implementation that converts JSON Strings into a .NET XDocument
+A Visual Basic .NET implementation that converts a JSON literal into a .NET XDocument
 
 To use the file simply add it to your project and call the JSON.Parse method.
 
