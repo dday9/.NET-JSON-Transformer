@@ -46,6 +46,12 @@ To use the file simply add it to your project and call the JSON.Parse method.
     </object>
     ```
 
+  * The parser does not parse to the exact specifications of the EBNF found on http://www.json.org/ the following list the deviations in this parser:
+    * Number: Checks if the number starts with either a positive sign or negative sign
+    * Boolean: Checks for "true" or "false" based on case-insensitivity
+    * Null: Checks for "null" based on case-insensitivity
+    * String: Does not check for "\u" followed by 4 hexadecimal characters as an escape character
+
 ## Examples and Demo:
   The following example demonstrates the Parse method.
   
