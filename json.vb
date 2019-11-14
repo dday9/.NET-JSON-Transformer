@@ -140,10 +140,13 @@ Public Module JSON
                 value = New XElement("object")
 
                 'Iterate through each item in the nodes
+                Dim objectItem, objectKey, objectValue As XElement
                 For Each n As Tuple(Of String, XElement) In nodes
-                    'Set the name attribute and then add the element to the Object
-                    n.Item2.SetAttributeValue("name", n.Item1)
-                    value.Add(n.Item2)
+                    objectKey = New XElement("key", n.Item1)
+                    objectValue = New XElement("value", n.Item2)
+                    
+                    objectItem = New XElement("item", {objectKey, objectValue})
+                    value.Add(objectItem)
                 Next
             End If
         End If
