@@ -16,33 +16,137 @@ To use the file simply add it to your project and call the JSON.Parse method.
   - An XML representation of the JSON literal. If the JSON is not parsable, then the method returns Nothing.
   
 ## Remarks
-  * The parser ignores whitespace. So if the JSON literal is:
+  * The parser ignores whitespace, essentially minfying the JSON. For example, if the JSON literal is:
     ``` json
     {
-      "string_key": [
-        1,
-        2,
-        {
-          "nested": true
+        "glossary": {
+            "title": "example glossary",
+            "GlossDiv": {
+                "title": "S",
+                "GlossList": {
+                    "GlossEntry": {
+                        "ID": "SGML",
+                        "SortAs": "SGML",
+                        "GlossTerm": "Standard Generalized Markup Language",
+                        "Acronym": "SGML",
+                        "Abbrev": "ISO 8879:1986",
+                        "GlossDef": {
+                            "para": "A meta-markup language, used to create markup languages such as DocBook.",
+                            "GlossSeeAlso": ["GML", "XML"]
+                        },
+                        "GlossSee": "markup"
+                    }
+                }
+            }
         }
-      ]
     }
     ```
   Then it gets parsed as:
   ``` json
-  {"string_key":[1,2,{"nested":true}]}
+  {"glossary":{"title":"example glossary","GlossDiv":{"title":"S","GlossList":{"GlossEntry":{"ID":"SGML","SortAs":"SGML","GlossTerm":"Standard Generalized Markup Language","Acronym":"SGML","Abbrev":"ISO 8879:1986","GlossDef":{"para":"A meta-markup language, used to create markup languages such as DocBook.","GlossSeeAlso":["GML","XML"]},"GlossSee":"markup"}}}}}
   ```
   
   * The returned XML is a 1-to-1 translation from the JSON. Using the same example as above, the resulting XML would be:
     ```
     <object>
-      <array name="string_key">
-        <number>1</number>
-        <number>2</number>
-        <object>
-          <boolean name="nested">true</boolean>
-        </object>
-      </array>
+      <item>
+        <key>glossary</key>
+        <value>
+          <object>
+            <item>
+              <key>title</key>
+              <value>
+                <string>example glossary</string>
+              </value>
+            </item>
+            <item>
+              <key>GlossDiv</key>
+              <value>
+                <object>
+                  <item>
+                    <key>title</key>
+                    <value>
+                      <string>S</string>
+                    </value>
+                  </item>
+                  <item>
+                    <key>GlossList</key>
+                    <value>
+                      <object>
+                        <item>
+                          <key>GlossEntry</key>
+                          <value>
+                            <object>
+                              <item>
+                                <key>ID</key>
+                                <value>
+                                  <string>SGML</string>
+                                </value>
+                              </item>
+                              <item>
+                                <key>SortAs</key>
+                                <value>
+                                  <string>SGML</string>
+                                </value>
+                              </item>
+                              <item>
+                                <key>GlossTerm</key>
+                                <value>
+                                  <string>Standard Generalized Markup Language</string>
+                                </value>
+                              </item>
+                              <item>
+                                <key>Acronym</key>
+                                <value>
+                                  <string>SGML</string>
+                                </value>
+                              </item>
+                              <item>
+                                <key>Abbrev</key>
+                                <value>
+                                  <string>ISO 8879:1986</string>
+                                </value>
+                              </item>
+                              <item>
+                                <key>GlossDef</key>
+                                <value>
+                                  <object>
+                                    <item>
+                                      <key>para</key>
+                                      <value>
+                                        <string>A meta-markup language, used to create markup languages such as DocBook.</string>
+                                      </value>
+                                    </item>
+                                    <item>
+                                      <key>GlossSeeAlso</key>
+                                      <value>
+                                        <array>
+                                          <string>GML</string>
+                                          <string>XML</string>
+                                        </array>
+                                      </value>
+                                    </item>
+                                  </object>
+                                </value>
+                              </item>
+                              <item>
+                                <key>GlossSee</key>
+                                <value>
+                                  <string>markup</string>
+                                </value>
+                              </item>
+                            </object>
+                          </value>
+                        </item>
+                      </object>
+                    </value>
+                  </item>
+                </object>
+              </value>
+            </item>
+          </object>
+        </value>
+      </item>
     </object>
     ```
 
@@ -56,12 +160,37 @@ To use the file simply add it to your project and call the JSON.Parse method.
   The following example demonstrates the Parse method.
   
   ``` vb.net
-  Option Strict On
-  Public Module Module1
-	  Public Sub Main()
-		  Dim jsonLiteral As String = "{""key"": [1, 2, 3], ""nested"": {""object"": true}}"
-		  Console.WriteLine(JSON.Parse(jsonLiteral))
-	  End Sub
-  End Module
+    Module Module1
+
+        Sub Main()
+            Dim input As String = <input>
+                                      {
+                                        "glossary": {
+                                            "title": "example glossary",
+		                                    "GlossDiv": {
+                                                "title": "S",
+			                                    "GlossList": {
+                                                    "GlossEntry": {
+                                                        "ID": "SGML",
+					                                    "SortAs": "SGML",
+					                                    "GlossTerm": "Standard Generalized Markup Language",
+					                                    "Acronym": "SGML",
+					                                    "Abbrev": "ISO 8879:1986",
+					                                    "GlossDef": {
+                                                            "para": "A meta-markup language, used to create markup languages such as DocBook.",
+						                                    "GlossSeeAlso": ["GML", "XML"]
+                                                        },
+					                                    "GlossSee": "markup"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                  </input>.Value.ToString()
+            Dim output As XDocument = JSON.Parse(input)
+            Console.WriteLine(output) : Console.ReadLine()
+        End Sub
+
+    End Module
   ```
-Fiddle: https://dotnetfiddle.net/G707RC
+Fiddle: https://dotnetfiddle.net/3ndfIJ
