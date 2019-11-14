@@ -72,6 +72,9 @@ Public Module JSON
 
             'Loop until we've reached the end of the source or until we've hit the ending bracket
             Do While temp_index < source.Length AndAlso Not source(temp_index).Equals("}"c)
+                'Increment the index and skip any unneeded whitespace
+                temp_index = SkipWhitespace(source, temp_index)
+
                 'Attempt to parse the String
                 key = Parse_String(source, temp_index)
 
