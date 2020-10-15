@@ -1,3 +1,4 @@
+
 # .NET-JSON-Transformer
 A Visual Basic .NET implementation that converts a JSON literal into a .NET XDocument
 
@@ -9,11 +10,11 @@ To use the file simply add it to your project and call the JSON.Parse method.
 **Parameters**
 - *source*
   - Type: System.String
-  - The JSON literal to be converted.
+  - A string that contains JSON.
 
 - Return Value
   - Type: System.Xml.Linq.XDocument
-  - An XML representation of the JSON literal. If the JSON is not parsable, then the method returns Nothing.
+  - An XDocument populated from the string that contains JSON.
   
 ## Remarks
   * The parser ignores whitespace, essentially minfying the JSON. For example, if the JSON literal is:
@@ -187,10 +188,10 @@ To use the file simply add it to your project and call the JSON.Parse method.
                                         }
                                     }
                                   </input>.Value.ToString()
-            Dim output As XDocument = JSON.Parse(input)
+            Dim output As XDocument = Json.Parse(input)
             Console.WriteLine(output) : Console.ReadLine()
         End Sub
 
     End Module
   ```
-Fiddle: https://dotnetfiddle.net/3ndfIJ
+Fiddle: https://dotnetfiddle.net/qNfSzP
