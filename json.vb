@@ -1,5 +1,11 @@
 Public Module JSON
 
+    ''' <summary>
+    ''' Creates a new <see cref="XDocument"/> from a JSON literal
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <returns><see cref="XDocument"/>
+    ''' An <see cref="XDocument"/> populated from the string that contains JSON.</returns>
     Public Function Parse(ByVal source As String) As XDocument
         'Remove any whitespace
         source = source.Trim()
@@ -17,6 +23,14 @@ Public Module JSON
         Return document
     End Function
 
+    ''' <summary>
+    ''' Creates a new <see cref="XElement"/> from a JSON literal at given index
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the parsing will begin.</param>
+    ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
+    ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
+    ''' 2. Nothing will be returned if the parse is not successful.</remarks>
     Private Function Parse_Value(ByVal source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
@@ -49,6 +63,14 @@ Public Module JSON
         Return value
     End Function
 
+    ''' <summary>
+    ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is an Object
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the parsing will begin.</param>
+    ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
+    ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
+    ''' 2. Nothing will be returned if the parse is not successful.</remarks>
     Private Function Parse_Object(ByVal source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
@@ -154,7 +176,15 @@ Public Module JSON
         'Return the value
         Return value
     End Function
-
+    
+    ''' <summary>
+    ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is an array
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the parsing will begin.</param>
+    ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
+    ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
+    ''' 2. Nothing will be returned if the parse is not successful.</remarks>
     Private Function Parse_Array(ByVal source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
@@ -216,7 +246,15 @@ Public Module JSON
 
         Return value
     End Function
-
+    
+    ''' <summary>
+    ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is a String
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the parsing will begin.</param>
+    ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
+    ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
+    ''' 2. Nothing will be returned if the parse is not successful.</remarks>
     Private Function Parse_String(ByVal source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
@@ -264,6 +302,14 @@ Public Module JSON
         Return value
     End Function
 
+    ''' <summary>
+    ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is a number
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the parsing will begin.</param>
+    ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
+    ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
+    ''' 2. Nothing will be returned if the parse is not successful.</remarks>
     Private Function Parse_Number(ByVal source As String, ByRef index As Integer) As XElement
         'Get the current culture information
         Dim culture As Globalization.CultureInfo = Globalization.CultureInfo.CurrentCulture
@@ -321,7 +367,16 @@ Public Module JSON
 
         Return value
     End Function
-
+    
+    ''' <summary>
+    ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is a boolean
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the parsing will begin.</param>
+    ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
+    ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
+    ''' 2. Nothing will be returned if the parse is not successful.
+    ''' 3. The parser deviates from ECMA-404 by ignoring the casing</remarks>
     Private Function Parse_Boolean(ByVal source As String, ByRef index As Integer) As XElement
         Dim value As XElement = Nothing
 
@@ -336,7 +391,16 @@ Public Module JSON
 
         Return value
     End Function
-
+    
+    ''' <summary>
+    ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is the literal "null"
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the parsing will begin.</param>
+    ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
+    ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
+    ''' 2. Nothing will be returned if the parse is not successful.
+    ''' 3. The parser deviates from ECMA-404 by ignoring the casing</remarks>
     Private Function Parse_Null(ByVal source As String, ByRef index As Integer) As XElement
         Dim value As XElement = Nothing
 
@@ -349,6 +413,12 @@ Public Module JSON
         Return value
     End Function
 
+    ''' <summary>
+    ''' Starting at a given index, skip any character that is whitespace
+    ''' </summary>
+    ''' <param name="source">A string that contains JSON.</param>
+    ''' <param name="index">The position of the JSON where the whitespace check will begin</param>
+    ''' <returns>An Integer where the first character of <paramref name="source"/>, starting at <paramref name="index"/>, is not whitespace.</returns>
     Private Function SkipWhitespace(ByVal source As String, ByVal index As Integer) As Integer
         Do While index < source.Length AndAlso Char.IsWhiteSpace(source(index))
             index += 1
