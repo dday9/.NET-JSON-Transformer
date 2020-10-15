@@ -254,7 +254,8 @@ Public Module Json
     ''' <param name="index">The position of the JSON where the parsing will begin.</param>
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
-    ''' 2. Nothing will be returned if the parse is not successful.</remarks>
+    ''' 2. Nothing will be returned if the parse is not successful.
+    ''' 3. The parser deviates from ECMA-404 by not checking for "\u" followed by 4 hexadecimal characters as an escape character</remarks>
     Private Function ParseString(source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
@@ -309,7 +310,8 @@ Public Module Json
     ''' <param name="index">The position of the JSON where the parsing will begin.</param>
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
-    ''' 2. Nothing will be returned if the parse is not successful.</remarks>
+    ''' 2. Nothing will be returned if the parse is not successful.
+    ''' 3. The parser deviates from ECMA-404 by checking for an optional unary positive sign operator</remarks>
     Private Function ParseNumber(source As String, ByRef index As Integer) As XElement
         'Get the current culture information
         Dim culture As Globalization.CultureInfo = Globalization.CultureInfo.CurrentCulture
