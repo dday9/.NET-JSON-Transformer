@@ -2,20 +2,52 @@
 # .NET-JSON-Transformer
 A Visual Basic .NET implementation that converts a JSON literal into a .NET XDocument
 
-To use the file simply add it to your project and call the JSON.Parse method.
+## Add to project
+The [json.vb](json.vb) code file is uncompiled. Follow these instructions to add the file to your project:
 
-## Syntax
-`Public Function Parse(ByVal source As String) As XDocument`
+ 1. Project > Add Existing Item (shift + alt + a)
+ 2. Select the file in the
+    browse dialog
+ 3. Add
 
-**Parameters**
-- *source*
-  - Type: System.String
-  - A string that contains JSON.
+## Json.Parse Method
+Creates a new [XDocument](https://docs.microsoft.com/en-us/dotnet/api/system.xml.linq.xdocument) from a JSON literal
 
-- Return Value
-  - Type: System.Xml.Linq.XDocument
-  - An XDocument populated from the string that contains JSON.
-  
+``` vb
+Public Shared Function Parse(ByVal source As String) As XDocument
+```
+
+### Parameters
+`source` [String](https://docs.microsoft.com/en-us/dotnet/api/system.string)
+A string that contains JSON.
+
+### Returns
+[XDocument](https://docs.microsoft.com/en-us/dotnet/api/system.xml.linq.xdocument)
+An [XDocument](https://docs.microsoft.com/en-us/dotnet/api/system.xml.linq.xdocument) populated from the string that contains JSON.
+
+### Example
+The following example illustrates the Json.Parse method:
+``` vb
+Const literal = "{ ""Property1"": 1, ""Property2"": false }"
+Dim parsedJson = Json.Parse(literal)
+Console.WriteLine(parsedJson.ToString())
+
+' <object>
+'   <item>
+'     <key>Property1</key>
+'     <value>
+'       <number>1</number>
+'     </value>
+'   </item>
+'   <item>
+'     <key>Property2</key>
+'     <value>
+'       <boolean>false</boolean>
+'     </value>
+'   </item>
+' </object>
+```
+
 ## Remarks
   * The parser ignores whitespace, essentially minfying the JSON. For example, if the JSON literal is:
     ``` json
@@ -161,37 +193,36 @@ To use the file simply add it to your project and call the JSON.Parse method.
   The following example demonstrates the Parse method.
   
   ``` vb.net
-    Module Module1
+ Public Module Module1
 
-        Sub Main()
-            Dim input As String = <input>
-                                      {
-                                        "glossary": {
-                                            "title": "example glossary",
-		                                    "GlossDiv": {
-                                                "title": "S",
-			                                    "GlossList": {
-                                                    "GlossEntry": {
-                                                        "ID": "SGML",
-					                                    "SortAs": "SGML",
-					                                    "GlossTerm": "Standard Generalized Markup Language",
-					                                    "Acronym": "SGML",
-					                                    "Abbrev": "ISO 8879:1986",
-					                                    "GlossDef": {
-                                                            "para": "A meta-markup language, used to create markup languages such as DocBook.",
-						                                    "GlossSeeAlso": ["GML", "XML"]
-                                                        },
-					                                    "GlossSee": "markup"
-                                                    }
-                                                }
-                                            }
+    Public Sub Main()
+        Const literal = "{
+                            ""glossary"": {
+                                ""title"": ""example glossary"",
+		                        ""GlossDiv"": {
+                                    ""title"": ""S"",
+			                        ""GlossList"": {
+                                        ""GlossEntry"": {
+                                            ""ID"": ""SGML"",
+					                        ""SortAs"": ""SGML"",
+					                        ""GlossTerm"": ""Standard Generalized Markup Language"",
+					                        ""Acronym"": ""SGML"",
+					                        ""Abbrev"": ""ISO 8879:1986"",
+					                        ""GlossDef"": {
+                                                ""para"": ""A meta-markup language, used to create markup languages such as DocBook."",
+						                        ""GlossSeeAlso"": [""GML"", ""XML""]
+                                            },
+					                        ""GlossSee"": ""markup""
                                         }
                                     }
-                                  </input>.Value.ToString()
-            Dim output As XDocument = Json.Parse(input)
-            Console.WriteLine(output) : Console.ReadLine()
-        End Sub
+                                }
+                            }
+                        }"
+        Dim parsedJson = Json.Parse(literal)
+        Console.WriteLine(parsedJson.ToString())
+        Console.ReadLine()
+    End Sub
 
-    End Module
+End Module
   ```
-Fiddle: https://dotnetfiddle.net/qNfSzP
+Fiddle: https://dotnetfiddle.net/bYcMYm
