@@ -1,4 +1,4 @@
-Public Module Json
+Public Class Json
 
     ''' <summary>
     ''' Creates a new <see cref="XDocument"/> from a JSON literal
@@ -6,7 +6,7 @@ Public Module Json
     ''' <param name="source">A string that contains JSON.</param>
     ''' <returns><see cref="XDocument"/>
     ''' An <see cref="XDocument"/> populated from the string that contains JSON.</returns>
-    Public Function Parse(source As String) As XDocument
+    Public Shared Function Parse(source As String) As XDocument
         'Remove any whitespace
         source = source.Trim()
         If String.IsNullOrWhiteSpace(source) Then Return Nothing
@@ -31,7 +31,7 @@ Public Module Json
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.</remarks>
-    Private Function ParseValue(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseValue(source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement
 
@@ -71,7 +71,7 @@ Public Module Json
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.</remarks>
-    Private Function ParseObject(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseObject(source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
 
@@ -185,7 +185,7 @@ Public Module Json
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.</remarks>
-    Private Function ParseArray(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseArray(source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
 
@@ -256,7 +256,7 @@ Public Module Json
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.
     ''' 3. The parser deviates from ECMA-404 by not checking for "\u" followed by 4 hexadecimal characters as an escape character</remarks>
-    Private Function ParseString(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseString(source As String, ByRef index As Integer) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
 
@@ -312,7 +312,7 @@ Public Module Json
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.
     ''' 3. The parser deviates from ECMA-404 by checking for an optional unary positive sign operator</remarks>
-    Private Function ParseNumber(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseNumber(source As String, ByRef index As Integer) As XElement
         'Get the current culture information
         Dim culture As Globalization.CultureInfo = Globalization.CultureInfo.CurrentCulture
 
@@ -379,7 +379,7 @@ Public Module Json
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.
     ''' 3. The parser deviates from ECMA-404 by ignoring the casing</remarks>
-    Private Function ParseBoolean(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseBoolean(source As String, ByRef index As Integer) As XElement
         Dim value As XElement = Nothing
 
         'Literally match 'true' or 'false'
@@ -403,7 +403,7 @@ Public Module Json
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.
     ''' 3. The parser deviates from ECMA-404 by ignoring the casing</remarks>
-    Private Function ParseNull(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseNull(source As String, ByRef index As Integer) As XElement
         Dim value As XElement = Nothing
 
         'Literally match 'null' in the source starting at the index
@@ -421,7 +421,7 @@ Public Module Json
     ''' <param name="source">A string that contains JSON.</param>
     ''' <param name="index">The position of the JSON where the whitespace check will begin</param>
     ''' <returns>An Integer where the first character of <paramref name="source"/>, starting at <paramref name="index"/>, is not whitespace.</returns>
-    Private Function SkipWhitespace(source As String, index As Integer) As Integer
+    Private Shared Function SkipWhitespace(source As String, index As Integer) As Integer
         Do While index < source.Length AndAlso Char.IsWhiteSpace(source(index))
             index += 1
         Loop
@@ -429,4 +429,4 @@ Public Module Json
         Return index
     End Function
 
-End Module
+End Class
