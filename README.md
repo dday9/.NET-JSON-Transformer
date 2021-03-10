@@ -1,6 +1,6 @@
 
 # .NET-JSON-Transformer
-A Visual Basic .NET implementation that converts a JSON literal into a .NET XDocument
+A Visual Basic .NET (VB.NET) implementation that converts a JSON literal into a .NET XDocument
 
 ## Add to project
 The [json.vb](json.vb) code file is uncompiled. Follow these instructions to add the file to your project:
