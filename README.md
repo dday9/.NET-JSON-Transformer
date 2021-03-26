@@ -189,7 +189,7 @@ Console.WriteLine(parsedJson.ToString())
     * Null: Checks for "null" based on case-insensitivity
     * String: Does not check for "\u" followed by 4 hexadecimal characters as an escape character
 
-## Examples and Demo:
+## Examples and Demo
   The following example demonstrates the Parse method.
   
   ``` vb.net
