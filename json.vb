@@ -9,16 +9,12 @@ Public Class Json
     Public Shared Function Parse(source As String) As XDocument
         'Remove any whitespace
         source = source.Trim()
-        If String.IsNullOrWhiteSpace(source) Then Return Nothing
-
-        'Declare a document to return
-        Dim document As XDocument = Nothing
-
-        'Declare a value that will make up the document
-        Dim value As XElement = ParseValue(source, 0)
-        If value IsNot Nothing Then
-            document = New XDocument(New XDeclaration("1.0", "utf-8", "yes"), value)
+        If String.IsNullOrWhiteSpace(source) Then
+            Return Nothing
         End If
+
+        Dim value = ParseValue(source, 0)
+        Dim document = If(value IsNot Nothing, New XDocument(New XDeclaration("1.0", "utf-8", "yes"), value), Nothing)
 
         Return document
     End Function
@@ -32,23 +28,20 @@ Public Class Json
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.</remarks>
     Private Shared Function ParseValue(source As String, ByRef index As Integer) As XElement
-        'Declare a value to return
-        Dim value As XElement
-
         'Declare a temporary placeholder and skip any whitespace
-        Dim tempIndex As Integer = SkipWhitespace(source, index)
+        Dim tempIndex = SkipWhitespace(source, index)
 
         'Go through each available value until one returns something that isn't null
-        value = ParseObject(source, tempIndex)
-        If value Is Nothing Then
+        Dim value = ParseObject(source, tempIndex)
+        If (value Is Nothing) Then
             value = ParseArray(source, tempIndex)
-            If value Is Nothing Then
+            If (value Is Nothing) Then
                 value = ParseString(source, tempIndex)
-                If value Is Nothing Then
+                If (value Is Nothing) Then
                     value = ParseNumber(source, tempIndex)
-                    If value Is Nothing Then
+                    If (value Is Nothing) Then
                         value = ParseBoolean(source, tempIndex)
-                        If value Is Nothing Then
+                        If (value Is Nothing) Then
                             value = ParseNull(source, tempIndex)
                         End If
                     End If
@@ -76,7 +69,7 @@ Public Class Json
         Dim value As XElement = Nothing
 
         'Declare a temporary placeholder
-        Dim tempIndex As Integer = index
+        Dim tempIndex = index
 
         'Check for the starting opening curly bracket
         If source(tempIndex).Equals("{"c) Then
@@ -93,7 +86,7 @@ Public Class Json
             Dim item As XElement
 
             'Loop until we've reached the end of the source or until we've hit the ending bracket
-            Do While tempIndex < source.Length AndAlso Not source(tempIndex).Equals("}"c)
+            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals("}"c))
                 'Increment the index and skip any unneeded whitespace
                 tempIndex = SkipWhitespace(source, tempIndex)
 
@@ -101,24 +94,24 @@ Public Class Json
                 key = ParseString(source, tempIndex)
 
                 'Check if the parse was successful
-                If key Is Nothing Then
+                If (key Is Nothing) Then
                     Throw New Exception($"Expected a String instead of a '{source(tempIndex)}' at position: {tempIndex}.")
                 Else
                     'Skip any unneeded whitespace
                     tempIndex = SkipWhitespace(source, tempIndex)
 
-                    If tempIndex < source.Length Then
+                    If (tempIndex < source.Length) Then
                         'Check if the currently iterated character is a object separator ':'
-                        If source(tempIndex) = ":"c Then
+                        If (source(tempIndex) = ":"c) Then
                             'Increment the index and skip any unneeded whitespace
                             tempIndex = SkipWhitespace(source, tempIndex + 1)
 
-                            If tempIndex < source.Length Then
+                            If (tempIndex < source.Length) Then
                                 'Assign the item to the parsed value
                                 item = ParseValue(source, tempIndex)
 
                                 'Check if the parse was successful
-                                If item Is Nothing Then
+                                If (item Is Nothing) Then
                                     Throw New Exception($"Unexpected character '{source(tempIndex)}' at position: {tempIndex}.")
                                 Else
                                     'Add the item to the collection
@@ -128,12 +121,12 @@ Public Class Json
                                     tempIndex = SkipWhitespace(source, tempIndex)
 
                                     'Check if we can continue
-                                    If tempIndex < source.Length Then
+                                    If (tempIndex < source.Length) Then
                                         'Check if the currently iterated character is either a item separator (comma) or ending curly bracket
-                                        If source(tempIndex).Equals(","c) Then
+                                        If (source(tempIndex).Equals(","c)) Then
                                             'Increment the index and skip any unneeded whitespace
                                             tempIndex = SkipWhitespace(source, tempIndex + 1)
-                                        ElseIf source(tempIndex) <> "}"c Then
+                                        ElseIf (source(tempIndex) <> "}"c) Then
                                             Throw New Exception($"Expected a ',' instead of a '{source(tempIndex)}' at position: {tempIndex}.")
                                         End If
                                     End If
@@ -151,7 +144,7 @@ Public Class Json
             Loop
 
             'Check if the currently iterated value is an ending curly bracket
-            If tempIndex < source.Length AndAlso source(tempIndex) = "}"c Then
+            If (tempIndex < source.Length AndAlso source(tempIndex) = "}"c) Then
                 'Increment the index
                 tempIndex += 1
 
@@ -193,7 +186,7 @@ Public Class Json
         Dim tempIndex As Integer = index
 
         'Check for the starting opening bracket
-        If source(tempIndex).Equals("["c) Then
+        If (source(tempIndex).Equals("["c)) Then
             'Increment the index
             tempIndex += 1
 
@@ -204,12 +197,12 @@ Public Class Json
             Dim item As XElement
 
             'Loop until we've reached the end of the source or until we've hit the ending bracket
-            Do While tempIndex < source.Length AndAlso Not source(tempIndex).Equals("]"c)
+            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals("]"c))
                 'Assign the item to the parsed value
                 item = ParseValue(source, tempIndex)
 
                 'Check if the parse was successful
-                If item Is Nothing Then
+                If (item Is Nothing) Then
                     Throw New Exception($"Unexpected character '{source(tempIndex)}' at position: {tempIndex}.")
                 Else
                     'Add the item to the collection
@@ -219,12 +212,12 @@ Public Class Json
                     tempIndex = SkipWhitespace(source, tempIndex)
 
                     'Check if we can continue
-                    If tempIndex < source.Length Then
+                    If (tempIndex < source.Length) Then
                         'Check if the currently iterated character is either a item separator (comma) or ending bracket
-                        If source(tempIndex).Equals(","c) Then
+                        If (source(tempIndex).Equals(","c)) Then
                             'Increment the index and skip any unneeded whitespace
                             tempIndex = SkipWhitespace(source, tempIndex + 1)
-                        ElseIf source(tempIndex) <> "]"c Then
+                        ElseIf (source(tempIndex) <> "]"c) Then
                             Throw New Exception($"Expected a ',' instead of a '{source(tempIndex)}' at position: {tempIndex}.")
                         End If
                     End If
@@ -232,7 +225,7 @@ Public Class Json
             Loop
 
             'Check if the currently iterated value is an ending bracket
-            If tempIndex < source.Length AndAlso source(tempIndex) = "]"c Then
+            If (tempIndex < source.Length AndAlso source(tempIndex) = "]"c) Then
                 'Increment the index
                 tempIndex += 1
 
@@ -268,18 +261,18 @@ Public Class Json
         Dim tempIndex As Integer = index
 
         'Check for the starting double-quote
-        If source(tempIndex).Equals(doubleQuote) Then
+        If (source(tempIndex).Equals(doubleQuote)) Then
             'Increment the index
             tempIndex += 1
 
             'Loop until we've reached the end of the source or until we've hit the ending double-quote
-            Do While tempIndex < source.Length AndAlso Not source(tempIndex).Equals(doubleQuote)
+            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals(doubleQuote))
                 'Check if we're at an escaped character
-                If source(tempIndex) = "\"c AndAlso
+                If (source(tempIndex) = "\"c AndAlso
                     tempIndex + 1 < source.Length AndAlso
-                    escapedCharacters.IndexOf(source(tempIndex + 1)) <> -1 Then
+                    escapedCharacters.IndexOf(source(tempIndex + 1)) <> -1) Then
                     tempIndex += 1
-                ElseIf source(tempIndex) = "\"c Then
+                ElseIf (source(tempIndex) = "\"c) Then
                     Throw New Exception("Unescaped backslash in a String. Position: " & index)
                 End If
 
@@ -288,7 +281,7 @@ Public Class Json
             Loop
 
             'Check if the currently iterated character is a double-quote
-            If tempIndex < source.Length AndAlso source(tempIndex).Equals(doubleQuote) Then
+            If (tempIndex < source.Length AndAlso source(tempIndex).Equals(doubleQuote)) Then
                 'Increment the index
                 tempIndex += 1
 
@@ -314,20 +307,20 @@ Public Class Json
     ''' 3. The parser deviates from ECMA-404 by checking for an optional unary positive sign operator</remarks>
     Private Shared Function ParseNumber(source As String, ByRef index As Integer) As XElement
         'Get the current culture information
-        Dim culture As Globalization.CultureInfo = Globalization.CultureInfo.CurrentCulture
+        Dim culture = Globalization.CultureInfo.CurrentCulture
 
         'Declare a temporary placeholder
-        Dim tempIndex As Integer = index
+        Dim tempIndex = index
 
         'Check for the optional unary operator
-        If source.IndexOf(culture.NumberFormat.NegativeSign, tempIndex, StringComparison.OrdinalIgnoreCase) = tempIndex OrElse
-            source.IndexOf(culture.NumberFormat.PositiveSign, tempIndex, StringComparison.OrdinalIgnoreCase) = tempIndex Then
+        If (source.IndexOf(culture.NumberFormat.NegativeSign, tempIndex, StringComparison.OrdinalIgnoreCase) = tempIndex OrElse
+            source.IndexOf(culture.NumberFormat.PositiveSign, tempIndex, StringComparison.OrdinalIgnoreCase) = tempIndex) Then
             tempIndex += 1
         End If
 
         'Match one or more digits
-        If tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1 Then
-            Do While tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1
+        If (tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1) Then
+            Do While (tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1)
                 tempIndex += 1
             Loop
         Else
@@ -335,30 +328,30 @@ Public Class Json
         End If
 
         'Optionally match a decimal separator followed by one or more digits
-        If tempIndex + 1 < source.Length AndAlso
+        If (tempIndex + 1 < source.Length AndAlso
             source.IndexOf(culture.NumberFormat.NumberDecimalSeparator, tempIndex, StringComparison.OrdinalIgnoreCase) = tempIndex AndAlso
-            Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex + 1).ToString()) <> -1 Then
+            Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex + 1).ToString()) <> -1) Then
 
             tempIndex += 1
-            Do While tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1
+            Do While (tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1)
                 tempIndex += 1
             Loop
         End If
 
         'Optionally match an exponent, followed by an optional unary operator, followed by 1 or more digits
-        If tempIndex + 1 < source.Length AndAlso
-            source.IndexOf("e", tempIndex, StringComparison.OrdinalIgnoreCase) = tempIndex Then
+        If (tempIndex + 1 < source.Length AndAlso
+            source.IndexOf("e", tempIndex, StringComparison.OrdinalIgnoreCase) = tempIndex) Then
 
-            If tempIndex + 2 < source.Length AndAlso
+            If (tempIndex + 2 < source.Length) AndAlso
                 (source.IndexOf(culture.NumberFormat.NegativeSign, tempIndex + 1, StringComparison.OrdinalIgnoreCase) = tempIndex + 1 OrElse
                 source.IndexOf(culture.NumberFormat.PositiveSign, tempIndex + 1, StringComparison.OrdinalIgnoreCase) = tempIndex + 1) AndAlso
                 Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex + 2).ToString()) <> -1 Then
                 tempIndex += 2
-            ElseIf tempIndex + 1 < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex + 1).ToString()) <> -1 Then
+            ElseIf (tempIndex + 1 < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex + 1).ToString()) <> -1) Then
                 tempIndex += 1
             End If
 
-            Do While tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1
+            Do While (tempIndex < source.Length AndAlso Array.IndexOf(culture.NumberFormat.NativeDigits, source(tempIndex).ToString()) <> -1)
                 tempIndex += 1
             Loop
         End If
@@ -422,7 +415,7 @@ Public Class Json
     ''' <param name="index">The position of the JSON where the whitespace check will begin</param>
     ''' <returns>An Integer where the first character of <paramref name="source"/>, starting at <paramref name="index"/>, is not whitespace.</returns>
     Private Shared Function SkipWhitespace(source As String, index As Integer) As Integer
-        Do While index < source.Length AndAlso Char.IsWhiteSpace(source(index))
+        Do While (index < source.Length AndAlso Char.IsWhiteSpace(source(index)))
             index += 1
         Loop
 
