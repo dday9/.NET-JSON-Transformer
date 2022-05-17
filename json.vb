@@ -6,14 +6,14 @@ Public Class Json
     ''' <param name="source">A string that contains JSON.</param>
     ''' <returns><see cref="XDocument"/>
     ''' An <see cref="XDocument"/> populated from the string that contains JSON.</returns>
-    Public Shared Function Parse(source As String) As XDocument
+    Public Shared Function Parse(source As String, Optional culture As CultureInfo = Nothing) As XDocument
         'Remove any whitespace
         source = source.Trim()
         If String.IsNullOrWhiteSpace(source) Then
             Return Nothing
         End If
 
-        Dim value = ParseValue(source, 0)
+        Dim value = ParseValue(source, 0, culture)
         Dim document = If(value IsNot Nothing, New XDocument(New XDeclaration("1.0", "utf-8", "yes"), value), Nothing)
 
         Return document
@@ -27,18 +27,18 @@ Public Class Json
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.</remarks>
-    Private Shared Function ParseValue(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseValue(source As String, ByRef index As Integer, Optional culture As CultureInfo = Nothing) As XElement
         'Declare a temporary placeholder and skip any whitespace
         Dim tempIndex = SkipWhitespace(source, index)
 
         'Go through each available value until one returns something that isn't null
-        Dim value = ParseObject(source, tempIndex)
+        Dim value = ParseObject(source, tempIndex, culture)
         If (value Is Nothing) Then
-            value = ParseArray(source, tempIndex)
+            value = ParseArray(source, tempIndex, culture)
             If (value Is Nothing) Then
                 value = ParseString(source, tempIndex)
                 If (value Is Nothing) Then
-                    value = ParseNumber(source, tempIndex)
+                    value = ParseNumber(source, tempIndex, culture)
                     If (value Is Nothing) Then
                         value = ParseBoolean(source, tempIndex)
                         If (value Is Nothing) Then
@@ -64,7 +64,7 @@ Public Class Json
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.</remarks>
-    Private Shared Function ParseObject(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseObject(source As String, ByRef index As Integer, Optional culture As CultureInfo = Nothing) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
 
@@ -108,7 +108,7 @@ Public Class Json
 
                             If (tempIndex < source.Length) Then
                                 'Assign the item to the parsed value
-                                item = ParseValue(source, tempIndex)
+                                item = ParseValue(source, tempIndex, culture)
 
                                 'Check if the parse was successful
                                 If (item Is Nothing) Then
@@ -159,7 +159,7 @@ Public Class Json
                 For Each n As Tuple(Of String, XElement) In nodes
                     objectKey = New XElement("key", n.Item1)
                     objectValue = New XElement("value", n.Item2)
-                    
+
                     objectItem = New XElement("item", {objectKey, objectValue})
                     value.Add(objectItem)
                 Next
@@ -169,7 +169,7 @@ Public Class Json
         'Return the value
         Return value
     End Function
-    
+
     ''' <summary>
     ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is an array
     ''' </summary>
@@ -178,7 +178,7 @@ Public Class Json
     ''' <returns>An <see cref="XElement"/> populated from the string that contains JSON.</returns>
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.</remarks>
-    Private Shared Function ParseArray(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseArray(source As String, ByRef index As Integer, Optional culture As CultureInfo = Nothing) As XElement
         'Declare a value to return
         Dim value As XElement = Nothing
 
@@ -199,7 +199,7 @@ Public Class Json
             'Loop until we've reached the end of the source or until we've hit the ending bracket
             Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals("]"c))
                 'Assign the item to the parsed value
-                item = ParseValue(source, tempIndex)
+                item = ParseValue(source, tempIndex, culture)
 
                 'Check if the parse was successful
                 If (item Is Nothing) Then
@@ -239,7 +239,7 @@ Public Class Json
 
         Return value
     End Function
-    
+
     ''' <summary>
     ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is a String
     ''' </summary>
@@ -305,9 +305,11 @@ Public Class Json
     ''' <remarks>1. <paramref name="index"/> will increment if the parse is successful.
     ''' 2. Nothing will be returned if the parse is not successful.
     ''' 3. The parser deviates from ECMA-404 by checking for an optional unary positive sign operator</remarks>
-    Private Shared Function ParseNumber(source As String, ByRef index As Integer) As XElement
+    Private Shared Function ParseNumber(source As String, ByRef index As Integer, Optional culture As CultureInfo = Nothing) As XElement
         'Get the current culture information
-        Dim culture = Globalization.CultureInfo.CurrentCulture
+        If (culture Is Nothing) Then
+            culture = CultureInfo.CurrentCulture
+        End If
 
         'Declare a temporary placeholder
         Dim tempIndex = index
@@ -362,7 +364,7 @@ Public Class Json
 
         Return value
     End Function
-    
+
     ''' <summary>
     ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is a boolean
     ''' </summary>
@@ -386,7 +388,7 @@ Public Class Json
 
         Return value
     End Function
-    
+
     ''' <summary>
     ''' Creates a new <see cref="XElement"/> from a JSON literal at given index where the expected JSON type is the literal "null"
     ''' </summary>
@@ -414,7 +416,7 @@ Public Class Json
     ''' <param name="source">A string that contains JSON.</param>
     ''' <param name="index">The position of the JSON where the whitespace check will begin</param>
     ''' <returns>An Integer where the first character of <paramref name="source"/>, starting at <paramref name="index"/>, is not whitespace.</returns>
-    Private Shared Function SkipWhitespace(source As String, index As Integer) As Integer
+    Private Shared Function SkipWhitespace(source As String, ByRef index As Integer) As Integer
         Do While (index < source.Length AndAlso Char.IsWhiteSpace(source(index)))
             index += 1
         Loop
