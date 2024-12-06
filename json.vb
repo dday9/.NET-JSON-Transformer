@@ -1,3 +1,5 @@
+Imports System.Globalization
+
 Public Class Json
 
     ''' <summary>
