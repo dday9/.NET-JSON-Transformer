@@ -2,6 +2,16 @@ Imports System.Globalization
 
 Public Class Json
 
+    Public Const COLON As Char = ":"c
+    Public Const COMMA As Char = ","c
+    Public Const CLOSE_BRACE As Char = "}"c
+    Public Const CLOSE_BRACKET As Char = "]"c
+    Public Const DOUBLE_QUOTE As Char = """"c
+    Public Const ESCAPED_CHARACTERS As String = DOUBLE_QUOTE & "\/bfnrt"
+    Public Const NULL_LITERAL As String = "null"
+    Public Const OPEN_BRACE As Char = "{"c
+    Public Const OPEN_BRACKET As Char = "["c
+
     ''' <summary>
     ''' Creates a new <see cref="XDocument"/> from a JSON literal
     ''' </summary>
@@ -74,7 +84,7 @@ Public Class Json
         Dim tempIndex = index
 
         'Check for the starting opening curly bracket
-        If source(tempIndex).Equals("{"c) Then
+        If source(tempIndex).Equals(OPEN_BRACE) Then
             'Increment the index
             tempIndex += 1
 
@@ -88,7 +98,7 @@ Public Class Json
             Dim item As XElement
 
             'Loop until we've reached the end of the source or until we've hit the ending bracket
-            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals("}"c))
+            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals(CLOSE_BRACE))
                 'Increment the index and skip any unneeded whitespace
                 tempIndex = SkipWhitespace(source, tempIndex)
 
@@ -104,7 +114,7 @@ Public Class Json
 
                     If (tempIndex < source.Length) Then
                         'Check if the currently iterated character is a object separator ':'
-                        If (source(tempIndex) = ":"c) Then
+                        If (source(tempIndex) = COLON) Then
                             'Increment the index and skip any unneeded whitespace
                             tempIndex = SkipWhitespace(source, tempIndex + 1)
 
@@ -125,10 +135,10 @@ Public Class Json
                                     'Check if we can continue
                                     If (tempIndex < source.Length) Then
                                         'Check if the currently iterated character is either a item separator (comma) or ending curly bracket
-                                        If (source(tempIndex).Equals(","c)) Then
+                                        If (source(tempIndex).Equals(COMMA)) Then
                                             'Increment the index and skip any unneeded whitespace
                                             tempIndex = SkipWhitespace(source, tempIndex + 1)
-                                        ElseIf (source(tempIndex) <> "}"c) Then
+                                        ElseIf (source(tempIndex) <> CLOSE_BRACE) Then
                                             Throw New Exception($"Expected a ',' instead of a '{source(tempIndex)}' at position: {tempIndex}.")
                                         End If
                                     End If
@@ -146,7 +156,7 @@ Public Class Json
             Loop
 
             'Check if the currently iterated value is an ending curly bracket
-            If (tempIndex < source.Length AndAlso source(tempIndex) = "}"c) Then
+            If (tempIndex < source.Length AndAlso source(tempIndex) = CLOSE_BRACE) Then
                 'Increment the index
                 tempIndex += 1
 
@@ -188,7 +198,7 @@ Public Class Json
         Dim tempIndex As Integer = index
 
         'Check for the starting opening bracket
-        If (source(tempIndex).Equals("["c)) Then
+        If (source(tempIndex).Equals(OPEN_BRACKET)) Then
             'Increment the index
             tempIndex += 1
 
@@ -199,7 +209,7 @@ Public Class Json
             Dim item As XElement
 
             'Loop until we've reached the end of the source or until we've hit the ending bracket
-            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals("]"c))
+            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals(CLOSE_BRACKET))
                 'Assign the item to the parsed value
                 item = ParseValue(source, tempIndex, culture)
 
@@ -216,10 +226,10 @@ Public Class Json
                     'Check if we can continue
                     If (tempIndex < source.Length) Then
                         'Check if the currently iterated character is either a item separator (comma) or ending bracket
-                        If (source(tempIndex).Equals(","c)) Then
+                        If (source(tempIndex).Equals(COMMA)) Then
                             'Increment the index and skip any unneeded whitespace
                             tempIndex = SkipWhitespace(source, tempIndex + 1)
-                        ElseIf (source(tempIndex) <> "]"c) Then
+                        ElseIf (source(tempIndex) <> CLOSE_BRACKET) Then
                             Throw New Exception($"Expected a ',' instead of a '{source(tempIndex)}' at position: {tempIndex}.")
                         End If
                     End If
@@ -227,7 +237,7 @@ Public Class Json
             Loop
 
             'Check if the currently iterated value is an ending bracket
-            If (tempIndex < source.Length AndAlso source(tempIndex) = "]"c) Then
+            If (tempIndex < source.Length AndAlso source(tempIndex) = CLOSE_BRACKET) Then
                 'Increment the index
                 tempIndex += 1
 
@@ -255,24 +265,20 @@ Public Class Json
         'Declare a value to return
         Dim value As XElement = Nothing
 
-        'Declare a CONST to store the double-quote character and escaped characters
-        Const doubleQuote = """"c
-        Const escapedCharacters As String = doubleQuote & "\/bfnrt"
-
         'Declare a temporary placeholder
         Dim tempIndex As Integer = index
 
         'Check for the starting double-quote
-        If (source(tempIndex).Equals(doubleQuote)) Then
+        If (source(tempIndex).Equals(DOUBLE_QUOTE)) Then
             'Increment the index
             tempIndex += 1
 
             'Loop until we've reached the end of the source or until we've hit the ending double-quote
-            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals(doubleQuote))
+            Do While (tempIndex < source.Length AndAlso Not source(tempIndex).Equals(DOUBLE_QUOTE))
                 'Check if we're at an escaped character
                 If (source(tempIndex) = "\"c AndAlso
                     tempIndex + 1 < source.Length AndAlso
-                    escapedCharacters.IndexOf(source(tempIndex + 1)) <> -1) Then
+                    ESCAPED_CHARACTERS.IndexOf(source(tempIndex + 1)) <> -1) Then
                     tempIndex += 1
                 ElseIf (source(tempIndex) = "\"c) Then
                     Throw New Exception("Unescaped backslash in a String. Position: " & index)
@@ -283,7 +289,7 @@ Public Class Json
             Loop
 
             'Check if the currently iterated character is a double-quote
-            If (tempIndex < source.Length AndAlso source(tempIndex).Equals(doubleQuote)) Then
+            If (tempIndex < source.Length AndAlso source(tempIndex).Equals(DOUBLE_QUOTE)) Then
                 'Increment the index
                 tempIndex += 1
 
@@ -380,10 +386,10 @@ Public Class Json
         Dim value As XElement = Nothing
 
         'Literally match 'true' or 'false'
-        If source.IndexOf("true", index, StringComparison.OrdinalIgnoreCase) = index Then
+        If source.IndexOf(Boolean.TrueString, index, StringComparison.OrdinalIgnoreCase) = index Then
             value = New XElement("boolean", True)
             index += 4
-        ElseIf source.IndexOf("false", index, StringComparison.OrdinalIgnoreCase) = index Then
+        ElseIf source.IndexOf(Boolean.FalseString, index, StringComparison.OrdinalIgnoreCase) = index Then
             value = New XElement("boolean", False)
             index += 5
         End If
@@ -404,8 +410,8 @@ Public Class Json
         Dim value As XElement = Nothing
 
         'Literally match 'null' in the source starting at the index
-        If source.IndexOf("null", index, StringComparison.OrdinalIgnoreCase) = index Then
-            value = New XElement("null")
+        If source.IndexOf(NULL_LITERAL, index, StringComparison.OrdinalIgnoreCase) = index Then
+            value = New XElement(NULL_LITERAL)
             index += 4
         End If
 
@@ -427,3 +433,4 @@ Public Class Json
     End Function
 
 End Class
+
