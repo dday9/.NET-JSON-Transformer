@@ -228,7 +228,7 @@ Console.WriteLine(parsedJson.ToString())
 
 End Module
   ```
-Fiddle: https://dotnetfiddle.net/FqqPnW
+Fiddle: [https://dotnetfiddle.net/FqqPnW](https://dotnetfiddle.net/1YUHJo)
 
 ## Donate
 Show your support! Your (non-tax deductible) donation of Monero cryptocurrency is a sign of solidarity among web developers.
