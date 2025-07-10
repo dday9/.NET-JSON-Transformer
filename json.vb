@@ -20,10 +20,10 @@ Public Class Json
     ''' An <see cref="XDocument"/> populated from the string that contains JSON.</returns>
     Public Shared Function Parse(source As String, Optional culture As CultureInfo = Nothing) As XDocument
         'Remove any whitespace
-        source = source.Trim()
-        If String.IsNullOrWhiteSpace(source) Then
+        If (String.IsNullOrWhiteSpace(source)) Then
             Return Nothing
         End If
+        source = source.Trim()
 
         Dim value = ParseValue(source, 0, culture)
         Dim document = If(value IsNot Nothing, New XDocument(New XDeclaration("1.0", "utf-8", "yes"), value), Nothing)
