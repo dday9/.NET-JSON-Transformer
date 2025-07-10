@@ -388,10 +388,10 @@ Public Class Json
         'Literally match 'true' or 'false'
         If source.IndexOf(Boolean.TrueString, index, StringComparison.OrdinalIgnoreCase) = index Then
             value = New XElement("boolean", True)
-            index += 4
+            index += Boolean.TrueString.Length
         ElseIf source.IndexOf(Boolean.FalseString, index, StringComparison.OrdinalIgnoreCase) = index Then
             value = New XElement("boolean", False)
-            index += 5
+            index += Boolean.FalseString.Length
         End If
 
         Return value
@@ -412,7 +412,7 @@ Public Class Json
         'Literally match 'null' in the source starting at the index
         If source.IndexOf(NULL_LITERAL, index, StringComparison.OrdinalIgnoreCase) = index Then
             value = New XElement(NULL_LITERAL)
-            index += 4
+            index += NULL_LITERAL.Length
         End If
 
         Return value
