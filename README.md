@@ -73,10 +73,10 @@ If you prefer source inclusion:
 	 - JsonTransformer.vb
 	 - All the custom exception and token class files
  2. Ensure your project references:
-   - `Microsoft.VisualBasic`
+	 - `Microsoft.VisualBasic`
 	 - `System.Globalization`
-   - `System.Collections.Generic`
-   - `System.Linq`
+	 - `System.Collections.Generic`
+	 - `System.Linq`
 	 - `System.Text`
 	 - `System.Xml.Linq`
 
