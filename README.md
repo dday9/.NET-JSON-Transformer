@@ -35,7 +35,18 @@ This version is a **complete rewrite** of the original implementation.
 
 ## Adding the Library to Your Project
 
-### Option 1: Reference the Class Library (Recommended)
+### Option 1: Add the compiled DLL
+
+The transformer is built as a .NET Standard 2.0 class library and included in the v2.0 release: [v2.0](../../releases/tag/v2.0)
+
+1. Right-click your project in the _Solution Explorer_
+2. Add Project Reference
+3. Go to the _Browse_ tab
+4. Click on the _Browse..._ button
+5. Select the DLL
+6. Click on the _OK_ button
+
+### Option 2: Reference the Class Library
 
 The transformer is built as a .NET Standard 2.0 class library.
 
@@ -52,7 +63,7 @@ This works from:
  - .NET Core
  - .NET 5+
 
-### Option 2: Add Source Files Directly
+### Option 3: Add Source Files Directly
 
 If you prefer source inclusion:
 
